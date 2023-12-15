@@ -1,0 +1,45 @@
+EEPROM
+Want to last 20 years and each byte can handle 1M writes --> 1 write every 600 seconds
+
+Keys
+1 - Back/Cancel
+2 - Down
+3 - Up
+4 - Settings/Modify/Accept
+
+
+Home
+    Setting - Display off
+
+Voltage
+    Setting - Multiplier
+    Setting - Offset
+
+Soc - measured
+    Setting - Resistance mOhm
+    Setting - Hysteresis mV
+
+Current
+    Setting - capacity per pulse mAs
+
+Soc - counted
+    Setting - Soc adjust
+    Setting - Soc set from measured
+    Setting - Capacity Ah
+
+Percentage
+
+  0% = -0.5 to   0.4999%
+  1% =  0.5 to   1.4999%
+ 50% = 49.5 to  50.4999%
+ 99% = 98.5 to  99.4999%
+100% = 99.5 to 100.4999%
+
+so add 0.5 and take whole part
+
+Charge routine
+==============
+Suppose target is 50% or 140Ah
+Start charge when SoC falls below 50.0%
+Start discharge when SoC reaches 51.0%
+Start neutral when SoC reaches 50.9%
