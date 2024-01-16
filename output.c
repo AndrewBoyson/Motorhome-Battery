@@ -10,9 +10,8 @@
 #include "eeprom-this.h"
 #include "voltage.h"
 
-#define CHARGE     PORTBbits.RB5
-#define SPARE_1    PORTBbits.RB1
-#define SUPPLY_OFF PORTCbits.RC7
+#define CHARGE     LATBbits.LB5
+#define SUPPLY_OFF LATCbits.LC7
 
 #define MIN_CHARGE_TEMPERATURE_8_BIT ( 5 << 8)
 #define MAX_CHARGE_MV    (3500 * 4) //100%
@@ -54,12 +53,10 @@ uint8_t OutputGetTargetSoc       () { return _targetSoc;        } void OutputSet
 void OutputInit()
 {
     TRISB5 = 0;	//RB5 (pin 26) output  CHARGE
-    TRISB1 = 0;	//RB1 (pin 22) output
-    TRISC7 = 0;	//RC7 (pin 18) output  DISCHARGE
+    TRISC7 = 0;	//RC7 (pin 18) output  SUPPLY_OFF
     
     CHARGE    = 0;
     SUPPLY_OFF = 0;
-    SPARE_1   = 0;
     
     uint8_t byte = EepromReadU8(EEPROM_OUTPUT_ENABLES_U8);
     _chargeEnabled    = byte & 2;
@@ -69,17 +66,8 @@ void OutputInit()
 
 void OutputMain()
 {
-//    uint8_t soc = CountGetSocPercent();
-//    uint8_t target = GetTargetSoc();
-//    uint8_t hys    = GetTargetHys();
-    /*
-Suppose target is 50% or 140Ah
-Start charge when SoC falls below 50.0% - 
-Start discharge when SoC reaches 51.0%
-Start neutral when SoC reaches 50.9%
-     */
     uint32_t            socAmpSeconds = CountGetAmpSeconds();
-    uint32_t         targetAmpSeconds = (uint32_t)OutputGetTargetSoc() * 280 * 36;
+    uint32_t         targetAmpSeconds = (uint32_t)OutputGetTargetSoc() * 280 * 36;          //50.000
     uint32_t    chargeStartAmpSeconds = targetAmpSeconds - (uint32_t)4999 * 28 * 36 / 1000; //49.501 = 50 - 0.499% 
     uint32_t dischargeStartAmpSeconds = targetAmpSeconds + (uint32_t)4999 * 28 * 36 / 1000; //50.499 = 50 + 0.499%
 
@@ -90,10 +78,10 @@ Start neutral when SoC reaches 50.9%
             if (socAmpSeconds <=    chargeStartAmpSeconds) _state = STATE_CHARGE;    //Drifts down to 49.501%
             break;
         case STATE_CHARGE:
-            if (socAmpSeconds >=         targetAmpSeconds) _state = STATE_NEUTRAL; //Charges to 50%
+            if (socAmpSeconds >=         targetAmpSeconds) _state = STATE_NEUTRAL; //Charges to 50.000%
             break;
         case STATE_DISCHARGE:
-            if (socAmpSeconds <=         targetAmpSeconds) _state = STATE_NEUTRAL; //Discharges to 50%
+            if (socAmpSeconds <=         targetAmpSeconds) _state = STATE_NEUTRAL; //Discharges to 50.000%
             break;
     }
 
