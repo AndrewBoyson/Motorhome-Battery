@@ -197,6 +197,10 @@ static void displayHome3()
     snprintf(line0, 17, "Tick len? %u", MsTickerGetLength());
     snprintf(line1, 17, "Ext-Int %+ldms", MsTickerGetExtMinusIntMs());
 }
+static void displayHome4()
+{
+    snprintf(line0, 17, "Scan time %dms", MsTimerScanTime);
+}
 
 static void displayCurrent0()
 {
@@ -485,7 +489,7 @@ void DisplayMain()
                     _setting++;
                     switch (_page)
                     {
-                        case PAGE_HOME        : if (_setting > 3) _setting = 0; break;
+                        case PAGE_HOME        : if (_setting > 4) _setting = 0; break;
                         case PAGE_CURRENT     : if (_setting > 0) _setting = 0; break;
                         case PAGE_SOC_COUNTED : if (_setting > 2) _setting = 0; break;
                         case PAGE_OUTPUT      : if (_setting > 2) _setting = 0; break;
@@ -521,6 +525,7 @@ void DisplayMain()
                     case 1: displayHome1(); break;
                     case 2: displayHome2(); break;
                     case 3: displayHome3(); break;
+                    case 4: displayHome4(); break;
                 }
                break;
             }

@@ -18,10 +18,10 @@ static void receive(uint16_t id, uint8_t length, void* pData)
     {
         case CAN_ID_SERVER  + CAN_ID_TIME:                       MsTickerRegulate           (*(uint32_t*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_COUNTED_AMP_SECONDS:        CountSetAmpSeconds         (*(uint32_t*)pData); break;
-        case CAN_ID_BATTERY + CAN_ID_OUTPUT_SETPOINT:            OutputSetTargetSoc         (*( uint8_t*)pData); break;
+        case CAN_ID_BATTERY + CAN_ID_OUTPUT_TARGET:            OutputSetTargetSoc         (*( uint8_t*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_CHARGE_ENABLED:             OutputSetChargeEnabled     (*    (char*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_DISCHARGE_ENABLED:          OutputSetDischargeEnabled  (*    (char*)pData); break;
-        case CAN_ID_BATTERY + CAN_ID_HEATER_SET_POINT:           HeaterSetTargetTenths      (*( int16_t*)pData); break;
+        case CAN_ID_BATTERY + CAN_ID_HEATER_TARGET:           HeaterSetTargetTenths      (*( int16_t*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_AGING_AS_PER_HOUR:          CountSetAgingAsPerHour     (*( int16_t*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_HEATER_PROPORTIONAL:        HeaterSetKp8bfdp           (*(uint16_t*)pData); break;
         case CAN_ID_BATTERY + CAN_ID_HEATER_INTEGRAL:            HeaterSetKi8bfdp           (*(uint16_t*)pData); break;
@@ -34,6 +34,7 @@ void CanThisInit(void)
 }
 void CanThisMain(void)
 {
+    /*
     static uint32_t msTimerAmpSeconds      = 0;
     static uint32_t msTimerMa              = 0;
     static uint32_t msOutputSetPoint       = 0;
@@ -65,12 +66,12 @@ void CanThisMain(void)
     
     if (MsTimerRepetitive(&msTimerAmpSeconds     , BASE_MS + CAN_ID_COUNTED_AMP_SECONDS       )) sendAmpSeconds          = 1;
     if (MsTimerRepetitive(&msTimerMa             , BASE_MS + CAN_ID_MA                        )) sendMa                  = 1;
-    if (MsTimerRepetitive(&msOutputSetPoint      , BASE_MS + CAN_ID_OUTPUT_SETPOINT           )) sendOutputSetPoint      = 1;
+    if (MsTimerRepetitive(&msOutputSetPoint      , BASE_MS + CAN_ID_OUTPUT_TARGET             )) sendOutputSetPoint      = 1;
     if (MsTimerRepetitive(&msOutputState         , BASE_MS + CAN_ID_OUTPUT_STATE              )) sendOutputState         = 1;
     if (MsTimerRepetitive(&msChargeEnabled       , BASE_MS + CAN_ID_CHARGE_ENABLED            )) sendChargeEnabled       = 1;
     if (MsTimerRepetitive(&msDischargeEnabled    , BASE_MS + CAN_ID_DISCHARGE_ENABLED         )) sendDischargeEnabled    = 1;
     if (MsTimerRepetitive(&msTemperature8bfdp    , BASE_MS + CAN_ID_TEMPERATURE_8BFDP         )) sendTemperature8bfdp    = 1;
-    if (MsTimerRepetitive(&msTemperatureSetPoint , BASE_MS + CAN_ID_HEATER_SET_POINT          )) sendTemperatureSetPoint = 1;
+    if (MsTimerRepetitive(&msTemperatureSetPoint , BASE_MS + CAN_ID_HEATER_TARGET             )) sendTemperatureSetPoint = 1;
     if (MsTimerRepetitive(&msHeaterOutput        , BASE_MS + CAN_ID_HEATER_OUTPUT             )) sendHeaterOutput        = 1;
     if (MsTimerRepetitive(&msHeaterKp            , BASE_MS + CAN_ID_HEATER_PROPORTIONAL       )) sendHeaterKp            = 1;
     if (MsTimerRepetitive(&msHeaterKi            , BASE_MS + CAN_ID_HEATER_INTEGRAL           )) sendHeaterKi            = 1;
@@ -79,15 +80,37 @@ void CanThisMain(void)
     
     if (sendAmpSeconds         ) { uint32_t ampSeconds          = CountGetAmpSeconds()         ; sendAmpSeconds          = CanTransmit(CAN_ID_BATTERY + CAN_ID_COUNTED_AMP_SECONDS     , sizeof(ampSeconds         ), &ampSeconds         ); }
     if (sendMa                 ) {  int32_t mA                  = PulseGetCurrentMa()          ; sendMa                  = CanTransmit(CAN_ID_BATTERY + CAN_ID_MA                      , sizeof(mA                 ), &mA                 ); }
-    if (sendOutputSetPoint     ) {  uint8_t outputSetPoint      = OutputGetTargetSoc()         ; sendOutputSetPoint      = CanTransmit(CAN_ID_BATTERY + CAN_ID_OUTPUT_SETPOINT         , sizeof(outputSetPoint     ), &outputSetPoint     ); }
+    
+    if (sendOutputSetPoint     ) {  uint8_t outputSetPoint      = OutputGetTargetSoc()         ; sendOutputSetPoint      = CanTransmit(CAN_ID_BATTERY + CAN_ID_OUTPUT_TARGET           , sizeof(outputSetPoint     ), &outputSetPoint     ); }
     if (sendOutputState        ) {     char outputState         = OutputGetState()             ; sendOutputState         = CanTransmit(CAN_ID_BATTERY + CAN_ID_OUTPUT_STATE            , sizeof(outputState        ), &outputState        ); }
     if (sendChargeEnabled      ) {     char chargeEnabled       = OutputGetChargeEnabled()     ; sendChargeEnabled       = CanTransmit(CAN_ID_BATTERY + CAN_ID_CHARGE_ENABLED          , sizeof(chargeEnabled      ), &chargeEnabled      ); }
     if (sendDischargeEnabled   ) {     char dischargeEnabled    = OutputGetDischargeEnabled()  ; sendDischargeEnabled    = CanTransmit(CAN_ID_BATTERY + CAN_ID_DISCHARGE_ENABLED       , sizeof(dischargeEnabled   ), &dischargeEnabled   ); }
+    
     if (sendTemperature8bfdp   ) {  int16_t temperatureTenths   = TemperatureGetAs8bfdp()      ; sendTemperature8bfdp    = CanTransmit(CAN_ID_BATTERY + CAN_ID_TEMPERATURE_8BFDP       , sizeof(temperatureTenths  ), &temperatureTenths  ); }
-    if (sendTemperatureSetPoint) {  int16_t heaterSetPoint      = HeaterGetTargetTenths()      ; sendTemperatureSetPoint = CanTransmit(CAN_ID_BATTERY + CAN_ID_HEATER_SET_POINT        , sizeof(heaterSetPoint     ), &heaterSetPoint     ); }
+    if (sendTemperatureSetPoint) {  int16_t heaterSetPoint      = HeaterGetTargetTenths()      ; sendTemperatureSetPoint = CanTransmit(CAN_ID_BATTERY + CAN_ID_HEATER_TARGET           , sizeof(heaterSetPoint     ), &heaterSetPoint     ); }
     if (sendHeaterOutput       ) {  uint8_t heaterOutput        = HeaterGetOutputFixed()       ; sendHeaterOutput        = CanTransmit(CAN_ID_BATTERY + CAN_ID_HEATER_OUTPUT           , sizeof(heaterOutput       ), &heaterOutput       ); }
     if (sendHeaterKp           ) { uint16_t heaterKp            = HeaterGetKp8bfdp()           ; sendHeaterKp            = CanTransmit(CAN_ID_BATTERY + CAN_ID_HEATER_PROPORTIONAL     , sizeof(heaterKp           ), &heaterKp           ); }
     if (sendHeaterKi           ) { uint16_t heaterKi            = HeaterGetKi8bfdp()           ; sendHeaterKi            = CanTransmit(CAN_ID_BATTERY + CAN_ID_HEATER_INTEGRAL         , sizeof(heaterKi           ), &heaterKi           ); }
+    
     if (sendVoltage            ) {  int16_t mv                  = VoltageGetAsMv()             ; sendVoltage             = CanTransmit(CAN_ID_BATTERY + CAN_ID_VOLTAGE                 , sizeof(mv                 ), &mv                 ); }
     if (sendAging              ) {  int16_t agingAsPerHour      = CountGetAgingAsPerHour()     ; sendAging               = CanTransmit(CAN_ID_BATTERY + CAN_ID_AGING_AS_PER_HOUR       , sizeof(agingAsPerHour     ), &agingAsPerHour     ); }
+    */
+    
+    { uint32_t value = CountGetAmpSeconds       (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_COUNTED_AMP_SECONDS, sizeof(value), &value); }
+    {  int32_t value = PulseGetCurrentMa        (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_MA                 , sizeof(value), &value); }
+    
+    {  uint8_t value = OutputGetTargetSoc       (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_OUTPUT_TARGET      , sizeof(value), &value); }
+    {     char value = OutputGetState           (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_OUTPUT_STATE       , sizeof(value), &value); }
+    {     char value = OutputGetChargeEnabled   (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_CHARGE_ENABLED     , sizeof(value), &value); }
+    {     char value = OutputGetDischargeEnabled(); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_DISCHARGE_ENABLED  , sizeof(value), &value); }
+    
+    {  int16_t value = TemperatureGetAs8bfdp    (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_TEMPERATURE_8BFDP  , sizeof(value), &value); }
+    {  int16_t value = HeaterGetTargetTenths    (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_HEATER_TARGET      , sizeof(value), &value); }
+    {  uint8_t value = HeaterGetOutputFixed     (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_HEATER_OUTPUT      , sizeof(value), &value); }
+    { uint16_t value = HeaterGetKp8bfdp         (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_HEATER_PROPORTIONAL, sizeof(value), &value); }
+    { uint16_t value = HeaterGetKi8bfdp         (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_HEATER_INTEGRAL    , sizeof(value), &value); }
+    
+    {  int16_t value = VoltageGetAsMv           (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_VOLTAGE            , sizeof(value), &value); }
+    {  int16_t value = CountGetAgingAsPerHour   (); static struct CanTransmitState state; CanTransmitOnChange(&state, CAN_ID_BATTERY, CAN_ID_AGING_AS_PER_HOUR  , sizeof(value), &value); }
+    
 }
