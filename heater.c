@@ -85,12 +85,17 @@ void setPwmDutyCycle(uint8_t dutyCycle)
 
 void HeaterMain(void)
 {
+    //Run only when there is a new sample
     if (!TemperatureIsValid) return;
+    if (!TemperatureSampleIsReadyForUseByHeater) return;
+    TemperatureSampleIsReadyForUseByHeater = 0;
     
-    static uint32_t msTimerIntegralDo   = 0;
+    //static uint32_t msTimerIntegralDo   = 0;
     static uint32_t msTimerIntegralSave = 0;
-    char doIntegral   = MsTimerRepetitive(&msTimerIntegralDo  ,  60000); //Every minute
+    //char doIntegral   = MsTimerRepetitive(&msTimerIntegralDo  ,  60000); //Every minute
     char saveIntegral = MsTimerRepetitive(&msTimerIntegralSave, 600000); //Every 10 minutes
+    
+    //if (!doIntegral) return;
     
     int16_t sp8bfdp    = TemperatureConvertTenthsTo8bfdp(_targetTenths);
     int16_t pv8bfdp    = TemperatureGetAs8bfdp();
@@ -100,7 +105,7 @@ void HeaterMain(void)
     int32_t      proportionalOutput16bfdp  = (int32_t)error8bfdp * _kp8bfdp;
 
     //Integral
-    if (doIntegral) _integralOutput16bfdp += (int32_t)error8bfdp * _ki8bfdp;
+    _integralOutput16bfdp += (int32_t)error8bfdp * _ki8bfdp;
     
     //Output
     int32_t output16bfdp = proportionalOutput16bfdp + _integralOutput16bfdp;
